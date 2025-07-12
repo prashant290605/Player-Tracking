@@ -14,7 +14,6 @@ your_project/
 ├── setup_and_run.bat              # One-click setup and execution script
 ├── 15sec_input_720p.mp4           # Input video (15 seconds, 720p)
 ├── requirements.txt               # Python dependencies (used by the bat file)
-├── python-installer.exe           # Bundled Python installer (if Python is missing)
 ├── README.md                      # Setup and usage instructions
 ├── output/                        # Auto-created folder for outputs (video + CSV)
 └── (best.pt will be auto-downloaded) 

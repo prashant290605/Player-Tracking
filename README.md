@@ -1,7 +1,6 @@
+# Player Tracking using YOLOv8 + Deep SORT
 
-# Player Tracking using YOLOv8 and DeepSORT
-
-This project performs player re-identification and tracking in a football video using a trained YOLOv8 model and DeepSORT. The output includes an annotated video with consistent player IDs and a CSV file logging player positions and quality metrics across frames.
+Track football players consistently using a 15-second match video. This project combines **YOLOv8** for detection and **Deep SORT** for tracking players across frames, automatically assigning and maintaining player IDs.
 
 ---
 
@@ -12,107 +11,111 @@ Ensure your project folder has the following structure **before running the code
 ```
 your_project/
 ├── main.py                        # Main tracking script
-├── best.pt                        # Your trained YOLOv8 model
-├── 15sec_input_720p.mp4           # The input video (15 seconds, 720p)
-├── requirements.txt               # Python dependencies to run the project
+├── setup_and_run.bat              # One-click setup and execution script
+├── 15sec_input_720p.mp4           # Input video (15 seconds, 720p)
+├── requirements.txt               # Python dependencies (used by the bat file)
+├── python-installer.exe           # Bundled Python installer (if Python is missing)
 ├── README.md                      # Setup and usage instructions
-└── output/                        # Auto-created folder for outputs (video + CSV)
-
-
+├── output/                        # Auto-created folder for outputs (video + CSV)
+└── (best.pt will be auto-downloaded) 
 ```
 
-You can create a folder, move everything into it, and then proceed with setup.
+You do **not** need to install anything manually — just run the command below.
 
 ---
 
-## Setup Instructions
+## How to Run
 
-### 1. Install Python (>= 3.8)
-
-Ensure you have Python 3.8 or newer:
-```bash
-python --version
-```
-
-### 2. Create and Activate Virtual Environment (Recommended)
+Run this in terminal:
 
 ```bash
-python -m venv venv
-venv\Scripts\activate    # On Windows
-# OR
-source venv/bin/activate # On Mac/Linux
+setup_and_run.bat
 ```
 
-### 3. Install All Dependencies
+This will **automatically**:
 
-Install dependencies manually or using the included `requirements.txt` file.
-
-```bash
-pip install -r requirements.txt
-```
-
-
-##  How to Run
-
-Once the dependencies are installed:
-
-```bash
-python main.py
-```
-
-This will:
-
-- Run detection & tracking
-- Save the output video with annotations
-- Save tracking logs in CSV format
+1. Install Python (if needed)
+2. Create and activate a virtual environment
+3. Install all dependencies (via `requirements.txt`)
+4. Download `best.pt` (YOLOv8 model) from Google Drive
+5. Run `main.py` to:
+   - Detect players frame-by-frame using YOLO
+   - Track them with consistent IDs using Deep SORT
+   - Save the annotated video with bounding boxes and IDs
 
 ---
 
 ## Output Files
 
-All outputs are saved in the `output/` folder:
+All outputs are saved inside the `output/` folder:
 
-### 1. `output_tracking.mp4`
+### `output_tracking.mp4`
 
-- The input video with bounding boxes and consistent player IDs
+- Input video with bounding boxes + player ID labels  
+- Bounding box color:
+  - Green = stable high-quality ID
+  - Yellow = tentative player (P?)
 
-### 2. `tracking_log.csv`
+### `tracking_log.csv` (Optional future version)
 
-Detailed per-frame tracking log:
+Logs each detected/tracked player per frame (if implemented):
 
 | frame_id | player_id | x1  | y1  | x2  | y2  | quality_score |
 |----------|-----------|-----|-----|-----|-----|----------------|
 | 0        | 1         | ... | ... | ... | ... | 0.84           |
-| 0        | 2         | ... | ... | ... | ... | 0.79           |
-| 1        | 1         | ... | ... | ... | ... | 0.85           |
-
-- Only **confirmed players** are logged
-- `player_id` is stable across frames
-- `quality_score` is a metric indicating tracking confidence and stability
+| 1        | 2         | ... | ... | ... | ... | 0.78           |
 
 ---
 
-## Requirements (Full List)
+## Requirements (Handled Automatically)
 
-These are all the dependencies your environment must have:
+You do **not** need to install these manually — `setup_and_run.bat` handles them.
 
 ```
-ultralytics==8.0.197
-deep_sort_realtime==1.3.1
-opencv-python
 torch==2.5.1
-torchvision
-torchaudio
-pandas
-numpy
-
+torchvision==0.20.1
+torchaudio==2.5.1
+ultralytics==8.0.197
+opencv-python==4.8.1.78
+pandas==2.2.2
+numpy==1.26.4
+deep_sort_realtime
+gdown
 ```
 
+---
+
+## Behind the Scenes
+
+When you run `setup_and_run.bat`, here’s what happens:
+
+1. **Python Installation Check**  
+   If Python 3.8+ isn't installed, it prompts or installs silently.
+
+2. **Virtual Environment Setup**  
+   Creates an isolated `venv/` folder for dependencies.
+
+3. **Dependency Installation**  
+   Installs all required packages using `pip` inside `venv`.
+
+4. **Model Download**  
+   If `best.pt` is not found locally, it uses `gdown` to download from Google Drive:
+   ```
+   https://drive.google.com/uc?id=1CYYfDl1yZ7v6UYSligIGfRuxx0KllBW2
+   ```
+
+5. **Run the Tracker**  
+   Executes `main.py`:
+   - Loads video
+   - Loads YOLOv8 model
+   - Runs detection on each frame
+   - Uses Deep SORT to assign and maintain IDs
+   - Writes the result as a new video with tracking overlays
+
+---
 
 ## Notes
 
-- If DeepSORT or YOLO fails to detect a player momentarily, ID stability is maintained through motion & size heuristics.
-- Bounding boxes with green colors indicate **high-quality stable IDs**.
-- Yellow boxes with `P?` are tentative, potentially lower confidence.
-
----
+- Works out-of-the-box on Windows (tested on Python 3.12)
+- Make sure you are **connected to the internet** the first time (for model download)
+- `output/` folder is created automatically if it doesn't exist

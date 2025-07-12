@@ -8,10 +8,17 @@ from ultralytics.nn.tasks import DetectionModel
 import os
 from collections import defaultdict
 import math
+import gdown
 
 torch.serialization.add_safe_globals({DetectionModel})
 base_dir = os.path.dirname(__file__)
 model_path = os.path.join(base_dir, "best.pt")
+
+if not os.path.exists(model_path):
+    print("best.pt not found. Downloading from Google Drive...")
+    file_id = "1CYYfDl1yZ7v6UYSligIGfRuxx0KllBW2"
+    gdown.download(id=file_id, output=model_path, quiet=False)
+    print("best.pt downloaded successfully.")
 model = YOLO(model_path)
 
 print("Model classes:", model.names)

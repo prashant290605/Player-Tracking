@@ -1,76 +1,116 @@
 # Player Tracking using YOLOv8 + Deep SORT
 
-Track football players consistently using a 15-second match video. This project combines **YOLOv8** for detection and **Deep SORT** for tracking players across frames, automatically assigning and maintaining player IDs.
+Consistent multi-object tracking of football players across video frames, combining **YOLOv8** for detection and **Deep SORT** for temporal identity association.
 
 ---
 
-## Folder Setup
+## Motivation
 
-Ensure your project folder has the following structure **before running the code**:
+Multi-object tracking is a fundamental problem in computer vision, particularly in sports analytics where consistent player identity across frames is critical for downstream tasks such as movement analysis, tactical reconstruction, and event detection.
+
+This project implements a lightweight tracking pipeline that:
+
+- Uses **YOLOv8** for robust, frame-level player detection
+- Uses **Deep SORT** for temporally consistent ID assignment via Kalman filtering and appearance-based re-identification
+- Maintains stable player IDs across frames, even under partial occlusion and motion blur
+
+---
+
+## Pipeline Overview
+
+```
+Input Video
+    │
+    ▼
+Frame Extraction
+    │
+    ▼
+Player Detection (YOLOv8)
+    │
+    ▼
+Feature Embedding Extraction (Deep SORT appearance model)
+    │
+    ▼
+Kalman Filter — State Prediction & Update
+    │
+    ▼
+Hungarian Algorithm — Detection-to-Track Assignment
+    │
+    ▼
+Annotated Video Rendering
+```
+
+Each detection is associated with an existing track (or initialized as a new one) using the Hungarian algorithm on a combined motion + appearance cost matrix. Tracks below a confidence threshold are marked tentative until confirmed over successive frames.
+
+---
+
+## Project Structure
 
 ```
 your_project/
-├── main.py                        # Main tracking script
-├── 15sec_input_720p.mp4           # Input video (15 seconds, 720p)
-├── requirements.txt               # Python dependencies (used by the bat file)
-├── README.md                      # Setup and usage instructions
-├── output/                        # Auto-created folder for outputs (video + CSV)
-└── (best.pt will be auto-downloaded) 
+├── main.py                   # Main tracking script
+├── 15sec_input_720p.mp4      # Input video (15 seconds, 720p)
+├── requirements.txt          # Python dependencies
+├── README.md                 # This file
+└── output/                   # Auto-created; stores output video and logs
+    ├── output_tracking.mp4
+    └── tracking_log.csv      # (optional, see below)
 ```
 
+> `best.pt` (YOLOv8 weights) is downloaded automatically on first run via `gdown`.
 
-## How to Run
+---
 
-Create an environment(optional but reccomended):
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+## Setup and Usage
 
-
-Run this in terminal:
-
+**1. Create a virtual environment (recommended)**
 ```bash
-pip install -r requirements.txt # install dependencies
+python -m venv venv
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
+```
+
+**2. Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+**3. Run the tracker**
+```bash
 python main.py
 ```
 
-This will:
-
-1. Load the input video
-2. Detect players using YOLOv8
-3. Track them across frames using Deep SORT 
-4. Save output video with bounding boxes + tracking IDs in output/
+This will load the input video, run per-frame detection and tracking, and write the annotated output to `output/`.
 
 ---
 
 ## Output Files
 
-All outputs are saved inside the `output/` folder:
+### `output/output_tracking.mp4`
 
-### `output_tracking.mp4`
+Annotated video with bounding boxes and player ID labels overlaid on each frame.
 
-- Input video with bounding boxes + player ID labels  
-- Bounding box color:
-  - Green = stable high-quality ID
-  - Yellow = tentative player (P?)
+Bounding box colors indicate track confidence:
+- **Green** — confirmed track (stable, high-quality ID)
+- **Yellow** — tentative track (recently initialized, awaiting confirmation)
 
-### `tracking_log.csv` (Optional future version)
+### `output/tracking_log.csv` *(optional)*
 
-Logs each detected/tracked player per frame (if implemented):
+Per-frame log of all tracked detections:
 
-| frame_id | player_id | x1  | y1  | x2  | y2  | quality_score |
-|----------|-----------|-----|-----|-----|-----|----------------|
-| 0        | 1         | ... | ... | ... | ... | 0.84           |
-| 1        | 2         | ... | ... | ... | ... | 0.78           |
+| frame_id | player_id | x1 | y1 | x2 | y2 | quality_score |
+|----------|-----------|----|----|----|----|---------------|
+| 0 | 1 | ... | ... | ... | ... | 0.84 |
+| 1 | 2 | ... | ... | ... | ... | 0.78 |
 
 ---
 
 ## Requirements
 
 ```
-torch==2.5.1
-torchvision==0.20.1
-torchaudio==2.5.1
+torch
+torchvision
+torchaudio
 ultralytics==8.0.197
 opencv-python==4.8.1.78
 pandas==2.2.2
@@ -79,14 +119,21 @@ deep_sort_realtime
 gdown
 ```
 
----
-
-5. **Run the Tracker**  
-   Executes `main.py`:
-   - Loads video
-   - Loads YOLOv8 model
-   - Runs detection on each frame
-   - Uses Deep SORT to assign and maintain IDs
-   - Writes the result as a new video with tracking overlays
+> PyTorch is left unpinned to avoid environment conflicts across CUDA versions. Install a CUDA-specific build manually if needed: see [pytorch.org/get-started](https://pytorch.org/get-started/locally/).
 
 ---
+
+## Limitations
+
+- No team classification or jersey color segmentation
+- No jersey number recognition
+- No cross-camera re-identification
+- Evaluated on a single 15-second clip; performance on longer sequences is untested
+- Deep SORT ID switches may increase under severe occlusion or fast camera motion
+
+---
+
+## Acknowledgments
+
+- [Ultralytics YOLOv8](https://github.com/ultralytics/ultralytics)
+- [Deep SORT Realtime](https://github.com/levan92/deep_sort_realtime)
